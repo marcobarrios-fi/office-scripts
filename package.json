@@ -1,0 +1,28 @@
+{
+  "name": "@marcobarrios-fi/office-scripts",
+  "version": "1.0.0",
+  "description": "Helper functions for writing Office Scripts in Excel.",
+  "main": "dist/office-scripts.min.ts",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "init": "mkdir build && mkdir dist",
+    "build": "cat src/*.ts > build/office-scripts.ts",
+    "dist": "cp build/office-scripts.ts dist/office-scripts.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcobarrios-fi/office-scripts.git"
+  },
+  "keywords": [
+    "automation",
+    "Excel",
+    "Office",
+    "Scripts",
+    "TypeScript"
+  ],
+  "author": "Marco Barrios",
+  "license": "MIT",
+  "homepage": "https://github.com/marcobarrios-fi/office-scripts#readme"
+}
