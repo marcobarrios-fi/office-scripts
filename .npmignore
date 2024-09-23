@@ -1,0 +1,14 @@
+.DS_Store
+.git
+.gitattributes
+.github
+.gitignore
+.npmignore
+.package-lock.json
+build/
+releases/
+src/
+temp/
+test/
+tests/
+tmp/
