@@ -22,4 +22,3 @@ function removeEmptyRowsFromRange(range: ExcelScript.Range) {
   }
   return range;
 }
-
