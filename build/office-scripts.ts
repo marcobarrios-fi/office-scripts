@@ -13,7 +13,8 @@ function addRangeAsTableToWorksheet(range: ExcelScript.Range, worksheet: ExcelSc
 
 /**
 * @summary Adds a new worksheet to the workbook
-* @description If a worksheet with the given name already exists, it will be deleted.
+* @description If a worksheet with the given name already exists, it will be replaced with an empty worksheet.
+* The name of the worksheet is automatically truncated to the maximum length supported by Excel.
 * The maximum length for worksheet names in Excel is 31 characters.
 * @argument {string} worksheetName Worksheet name
 * @returns {ExcelScript.Worksheet} Returns an ExcelScript worksheet
@@ -28,37 +29,18 @@ function addWorksheet(worksheetName: string) {
 }
 
 /**
-* @requires getUsedRangeInCompatibilityMode
+* @requires getWorksheetDataRange
 * @summary Retrieves the used data range for the active worksheet 
 * @description Returns the first table if the active worksheet contains a table. 
 * If the active worksheet does not contain a table, the function returns the used range, which Excel determines automatically. 
-columns. 
 * The `ExcelScript.Worksheet.getUsedRange` API contains a bug causing an error when used with XLS files in compatibility mode.
-* If there is an error retrieving the used range for the active worksheet, the used range is manually retrieved by iterating through rows and 
+* If there is an error retrieving the used range for the active worksheet, the used range is manually retrieved by iterating through rows and columns.
 * @returns {ExcelScript.Range} Returns an ExcelScript range
 */
 
 function getActiveWorksheetDataRange() {
-  // Retrieve the active sheet
-  let activeWorksheet = workbook.getActiveWorksheet();
-  // Retrieve the first table in the active worksheet
-  let firstTable = activeWorksheet.getTables()[0];
-  // If the active worksheet does not contain a table
-  if (typeof firstTable === 'undefined') {
-    try {
-      // Return the used range for the active worksheet
-      return activeWorksheet.getUsedRange();
-    // If there is an error retrieving the used range
-    } catch (error) {
-      console.log('Could retrieve the used range.');
-      // Retrieve used range manually by iterating through active worksheet rows and columns
-      return getUsedRangeInCompatibilityMode(activeWorksheet, 10);
-    }
-  }
-  return firstTable.getRange();
-}
-
-/**
+  return getWorksheetDataRange(workbook.getActiveWorksheet().getName());
+}/**
 * @summary Retrieves values of the first column in the given range
 * @argument {ExcelScript.Range} range Range
 * @returns {array} Returns an array
@@ -129,6 +111,36 @@ function getLastRowIndexInWorksheet(worksheet: ExcelScript.Worksheet, threshold:
 }
 
 /**
+* @summary Creates an object using the specified keys and values
+* @details Values must be either strings, numbers, or boolean values.
+* Office Scripts does not support JavaScript `Object.fromEntries` function.
+* @argument {array} keys Keys
+* @argument {array} values Values
+* @returns {object} Returns an objects
+*/
+
+function getObjectFromKeysAndValues(keys: string[], values: (string|number|boolean)[]) {
+  let object = new Object();
+    for (const index in keys) {
+      if (keys[index].trim().length) {
+        object[keys[index].trim()] = values[index];
+      }
+    }
+  return object;
+}/**
+* @requires getObjectFromKeysAndValues
+* @summary Converts the given Excel range to an array of objects
+* @details The values of the first row are used as the the object keys.
+* Office Scripts does not support JavaScript `Object.fromEntries` function.
+* @argument {ExcelScript.Range} range Excel range
+* @returns {array} Returns an array of objects
+*/
+
+function getRangeAsArrayOfObjects(range: ExcelScript.Range) {
+  return range.getOffsetRange(1, 0).getValues().map(values =>
+    getObjectFromKeysAndValues(range.getRow(0).getTexts()[0], values)
+  );
+}/**
 * @requires removeEmptyRowsFromRange
 * @summary Retrieves a new range starting from the given cell address 
 * @description Throws an error if the range does not contain a cell with the given address.
@@ -214,6 +226,16 @@ function getTableColumnValuesByColumnName(table: ExcelScript.Table, columnName: 
 }
 
 /**
+* @summary Retrieves unique array values
+* @argument {array} array Array
+* @returns {array} Returns an array
+*/
+
+function getUniqueArrayValues(array: []) {
+  return array.filter((
+    value, index, array
+  ) => array.indexOf(value) === index);
+}/**
 * @requires getLastColumnIndexInWorksheet
 * @requires getLastRowIndexInWorksheet
 * @requires getWorksheetRange
@@ -232,6 +254,34 @@ function getUsedRangeInCompatibilityMode(worksheet: ExcelScript.Worksheet, thres
 }
 
 /**
+* @requires getUsedRangeInCompatibilityMode
+* @summary Retrieves the used data range for the given worksheet 
+* @description Returns the first table if the worksheet contains a table. 
+* If the worksheet does not contain a table, the function returns the used range, which Excel determines automatically. 
+* The `ExcelScript.Worksheet.getUsedRange` API contains a bug causing an error when used with XLS files in compatibility mode.
+* If there is an error retrieving the used range for the active worksheet, the used range is manually retrieved by iterating through rows and columns.
+* @returns {ExcelScript.Range} Returns an ExcelScript range
+*/
+
+function getWorksheetDataRange(worksheetName: string) {
+  // Retrieve the given worksheet
+  let worksheet = workbook.getWorksheet(worksheetName);
+  // Retrieve the first table in the worksheet
+  let firstTable = worksheet.getTables()[0];
+  // If the worksheet does not contain a table
+  if (typeof firstTable === 'undefined') {
+    try {
+      // Return the used range for the worksheet
+      return worksheet.getUsedRange();
+    // If there is an error retrieving the used range
+    } catch (error) {
+      console.log('Could retrieve the used range.');
+      // Retrieve used range manually by iterating through worksheet rows and columns
+      return getUsedRangeInCompatibilityMode(worksheet, 10);
+    }
+  }
+  return firstTable.getRange();
+}/**
 * @summary Retrieves a new range within the given worksheet 
 * @description The new range starts from the first cell and spans the given number of rows and columns.
 * @argument {ExcelScript.Worksheet} worksheet Worksheet
@@ -268,4 +318,3 @@ function removeEmptyRowsFromRange(range: ExcelScript.Range) {
   }
   return range;
 }
-
