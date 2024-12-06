@@ -8,7 +8,7 @@
   },
   "scripts": {
     "init": "mkdir build && mkdir dist",
-    "build": "echo \"/* Helper Functions (Build $(date +%Y-%m-%d)) */\" > build/office-scripts.ts && echo > build/office-scripts.ts && for filename in src/*.ts; do cat $filename >> build/office-scripts.ts; echo >> build/office-scripts.ts; echo >> build/office-scripts.ts; done",
+    "build": "echo \"/* Helper Functions (Build $(date +%Y-%m-%d)) */\" > build/office-scripts.ts && echo >> build/office-scripts.ts && for filename in src/*.ts; do cat $filename >> build/office-scripts.ts; echo >> build/office-scripts.ts; echo >> build/office-scripts.ts; done",
     "dist": "cp build/office-scripts.ts dist/office-scripts.ts"
   },
   "repository": {
