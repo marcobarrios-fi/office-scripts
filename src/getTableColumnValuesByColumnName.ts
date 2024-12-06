@@ -12,4 +12,3 @@ function getTableColumnValuesByColumnName(table: ExcelScript.Table, columnName: 
   }
   return column.getRangeBetweenHeaderAndTotal().getTexts().map(columnValue => columnValue[0]);
 }
-
