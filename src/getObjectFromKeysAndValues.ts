@@ -1,18 +1,15 @@
 /**
 * @summary Creates an object using the specified keys and values
-* @details Values must be either strings, numbers, or boolean values.
+* @details Values must match the `ExcelRowValue` type definition
 * Office Scripts does not support JavaScript `Object.fromEntries` function.
-* @argument {array} keys Keys
-* @argument {array} values Values
-* @returns {object} Returns an objects
 */
 
-function getObjectFromKeysAndValues(keys: string[], values: (string|number|boolean)[]) {
+function getObjectFromKeysAndValues(keys: string[], values: ExcelRowValue[]): {} {
   let object = new Object();
-    for (const index in keys) {
-      if (keys[index].trim().length) {
-        object[keys[index].trim()] = values[index];
-      }
+  for (const index in keys) {
+    if (keys[index].trim().length) {
+      object[keys[index].trim()] = values[index]
     }
+  }
   return object;
 }
