@@ -22,4 +22,3 @@ function getLastRowIndexInWorksheet(worksheet: ExcelScript.Worksheet, threshold:
   }
   return lastRowWithValues.getRowIndex();
 }
-
