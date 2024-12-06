@@ -20,7 +20,7 @@ class ExcelDate extends Date {
   */
   
   toString(): string {
-    return this.toISOString();
+    return super.toISOString();
   }
 
   /**
@@ -29,7 +29,7 @@ class ExcelDate extends Date {
   */
   
   toUSLongFormatString(): string {
-    return this.toLocaleDateString('en-US', {
+    return super.toLocaleDateString('en-US', {
       month: 'long', day: 'numeric', year: 'numeric',
     });
   }
