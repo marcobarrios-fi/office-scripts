@@ -7,4 +7,3 @@
 function getFirstColumnValuesInRange(range: ExcelScript.Range) {
   return range.getColumn(0).getTexts().map(columnValue => columnValue[0]);
 }
-
