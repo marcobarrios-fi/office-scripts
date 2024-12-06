@@ -14,4 +14,3 @@ function addWorksheet(worksheetName: string) {
   }
   return workbook.addWorksheet(worksheetName);
 }
-
