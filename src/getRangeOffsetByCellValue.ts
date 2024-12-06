@@ -34,4 +34,3 @@ function getRangeOffsetByCellValue(range: ExcelScript.Range, cellValue: string, 
     );
   }
 }
-
