@@ -7,4 +7,3 @@
  function getNonEmptyCellCountInRange(range: ExcelScript.Range) {
   return range.getTexts().filter(cellValue => cellValue[0].trim().length).length;
 }
-
