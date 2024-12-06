@@ -5,11 +5,14 @@
 
 class ExcelURL extends URL {
 
+  /**
+  * @summary URL title
+  */
+
   title: string;
 
   /**
-  * @summary Constructs a JavaScript URL object from an Excel hyperlink
-  * @argument {ExcelScript.RangeHyperlink} hyperlink Excel hyperlink
+  * @summary Constructs a custom JavaScript URL object from an Excel hyperlink
   */
 
   constructor(hyperlink: ExcelScript.RangeHyperlink) {
