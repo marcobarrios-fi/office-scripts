@@ -15,4 +15,3 @@
 function getUsedRangeInCompatibilityMode(worksheet: ExcelScript.Worksheet, threshold: number) {
   return getWorksheetRange(worksheet, getLastRowIndexInWorksheet(worksheet, threshold) + 1, getLastColumnIndexInWorksheet(worksheet, threshold) + 1);
 }
-
