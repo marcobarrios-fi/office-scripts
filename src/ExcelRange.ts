@@ -60,9 +60,7 @@ class ExcelRange {
   */
 
   parseExcelRow(row: ExcelScript.Range): ExcelRowValue[] {
-    return Array.from(Array(row.getColumnCount())).map((_, columnNumber) => 
-      this.parseExcelCell(row.getColumn(columnNumber))
-    );
+    return Array.from(Array(row.getColumnCount())).map((_, columnNumber) => this.parseExcelCell(row.getColumn(columnNumber)));
   }
 
   /**
@@ -73,9 +71,7 @@ class ExcelRange {
   parseExcelRange(range: ExcelScript.Range): ExcelRow[] {
     const keys = range.getRow(0).getTexts()[0];
     range = range.getOffsetRange(1, 0);
-    return Array.from(Array(range.getRowCount())).map((_, rowNumber) => 
-      new ExcelRow(keys, this.parseExcelRow(range.getRow(rowNumber)))
-    ).filter(row => Object.values(row).every(value => value === null) === false)
+    return Array.from(Array(range.getRowCount())).map((_, rowNumber) => new ExcelRow(keys, this.parseExcelRow(range.getRow(rowNumber)))).filter(row => !Object.values(row).every(value => value === null));
   }
   
 }
