@@ -5,7 +5,7 @@
 class ExcelRow {
 
   /**
-  * @summary Constructs a new row using the specified keys and values
+  * @summary Constructs a new `ExcelRow` object using the specified keys and values
   * @details Values must match the `ExcelRowValue` type definition
   * Office Scripts does not support JavaScript `Object.fromEntries` function.
   */
