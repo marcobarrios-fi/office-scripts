@@ -10,4 +10,3 @@ function addRangeAsTableToWorksheet(range: ExcelScript.Range, worksheet: ExcelSc
   worksheet.getCell(0, 0).copyFrom(range);
   return worksheet.addTable(worksheet.getRangeByIndexes(0, 0, range.getRowCount(), range.getColumnCount()), hasHeaders);
 }
-
