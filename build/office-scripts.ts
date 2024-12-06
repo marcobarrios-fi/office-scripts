@@ -1,3 +1,186 @@
+/* Helper Functions (Build 2024-12-06) */
+
+/**
+* @summary ExcelDate class
+*/
+
+class ExcelDate extends Date {
+
+  /**
+  * @summary Constructs a JavaScript Date object from an Excel date value
+  * @argument {number} excelDateValue Excel date value
+  * @see https://learn.microsoft.com/en-us/office/dev/scripts/resources/samples/javascript-dates
+  */
+
+  constructor(excelDateValue: number) { 
+    super(Math.round((excelDateValue - 25569) * 86400 * 1000));
+  }
+
+  /**
+  * @summary Returns the date in the ISO 8601 format
+  * @example 2024-12-01T12:30:00.000Z
+  */
+  
+  toString(): string {
+    return this.toISOString();
+  }
+
+  /**
+  * @summary Returns the date in the US long format
+  * @example December 1, 2024
+  */
+  
+  toUSLongFormatString(): string {
+    return this.toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric',
+    });
+  }
+
+}
+
+/**
+* @summary ExcelRange class
+*/
+
+class ExcelRange {
+
+  rows: ExcelRow[];
+
+  /**
+  * @summary Constructs a new `ExcelRange` object
+  */
+
+  constructor(range: ExcelScript.Range) {
+    this.rows = this.parseExcelRange(range);
+    return this;
+  }
+
+  /**
+  * @requires ExcelDate
+  * @requires ExcelURL
+  * @summary Parses an `ExcelScript.Range` cell to an `ExcelRowValue` value
+  */
+
+  parseExcelCell(cell: ExcelScript.Range): ExcelRowValue {
+    switch (cell.getValueType()) {
+      case ExcelScript.RangeValueType.boolean:
+        if (cell.getText() === 'TRUE') {
+          return true;
+        } else {
+          return false;
+        }
+      case ExcelScript.RangeValueType.double:
+        if (cell.getNumberFormatCategory() === ExcelScript.NumberFormatCategory.date) {
+          return new ExcelDate(cell.getValue() as number);
+        } else {
+          return cell.getValue();
+        }
+      case ExcelScript.RangeValueType.empty:
+        return null;
+      case ExcelScript.RangeValueType.string:
+        const cellHyperlink = cell.getHyperlink();
+        if (cell.getHyperlink()) {
+          return new ExcelURL(cellHyperlink.address, cellHyperlink.textToDisplay);
+        } else {
+          const cellValue = cell.getText();
+          if (cellValue.trim().length) {
+            return cellValue.trim();
+          } else {
+            return null;
+          }
+        }
+      default: 
+        console.log(`Unsupported data type in cell ${cell.getAddress()}`);
+        return cell.getText();
+    }
+  }
+
+  /**
+  * @summary Parses an `ExcelScript.Range` row to an array consisting of `ExcelRowValue` values
+  */
+
+  parseExcelRow(row: ExcelScript.Range): ExcelRowValue[] {
+    return Array.from(Array(row.getColumnCount())).map((_, columnNumber) => 
+      this.parseExcelCell(row.getColumn(columnNumber))
+    );
+  }
+
+  /**
+  * @requires ExcelRow
+  * @summary Parses an `ExcelScript.Range` range to an array consisting of `ExcelRow` objects
+  */
+
+  parseExcelRange(range: ExcelScript.Range): ExcelRow {
+    const keys = range.getRow(0).getTexts()[0];
+    range = range.getOffsetRange(1, 0);
+    return Array.from(Array(range.getRowCount())).map((_, rowNumber) => 
+      new ExcelRow(keys, this.parseExcelRow(range.getRow(rowNumber)))
+    ).filter(row => Object.values(row).every(value => value === null) === false)
+  }
+  
+}
+
+/**
+* @summary ExcelRow class
+*/
+
+class ExcelRow {
+
+  /**
+  * @summary Constructs a new row using the specified keys and values
+  * @details Values must match the `ExcelRowValue` type definition
+  * Office Scripts does not support JavaScript `Object.fromEntries` function.
+  */
+
+  constructor(keys: string[], values: ExcelRowValue[]) {
+    for (const index in keys) {
+      if (keys[index].trim().length) {
+        this[keys[index].trim()] = values[index]
+      }
+    }
+  }
+  
+}
+
+/**
+* ExcelRowValue type definition
+*/
+
+type ExcelRowValue = boolean | null | number | string | ExcelDate | ExcelURL;
+
+/**
+* @summary ExcelURL class
+* The ExcelURL class extends the standard JavaScript URL object.
+*/
+
+class ExcelURL extends URL {
+
+  title: string;
+
+  /**
+  * @summary Constructs a JavaScript URL object from an Excel hyperlink
+  * @argument {ExcelScript.RangeHyperlink} hyperlink Excel hyperlink
+  */
+
+  constructor(hyperlink: ExcelScript.RangeHyperlink) {
+    super(hyperlink.address);
+    this.title = hyperlink.textToDisplay;
+  }
+
+  /**
+  * @summary Constructs an Excel hyperlink
+  */
+
+  toExcelHyperlink(): ExcelScript.RangeHyperlink {
+    return {
+      address: this.href,
+      screenTip: this.title,
+      textToDisplay: this.title
+    }
+  }
+
+}
+
 /**
 * @summary Adds a range to the given worksheet as a table 
 * @argument {ExcelScript.Range} range Range
@@ -29,6 +212,26 @@ function addWorksheet(worksheetName: string) {
 }
 
 /**
+* @summary Capitalizes the given name
+* @example Example of capitalizing a name:
+* capitalizeName('marco barrios');
+* > Marco Barrios
+*/
+ 
+function capitalizeName(name: string): string {
+  return name.toLowerCase().replace(new RegExp('[A-Za-zÀ-ÖØ-öø-ÿ]+', 'g'), function (substring) {
+    if (Array('de', 'der', 'dit', 'van', 'von').includes(substring)) {
+      return substring;
+    } else if (substring.startsWith('mc') && substring.length > 3) {
+      return 'Mc' + substring[2].toUpperCase() + substring.slice(3);
+    } else if (substring.startsWith('mac') && substring.length > 4) {
+      return 'Mac' + substring[3].toUpperCase() + substring.slice(4);
+    }
+    return substring[0].toUpperCase() + substring.slice(1);
+  });
+}
+
+/**
 * @requires getWorksheetDataRange
 * @summary Retrieves the used data range for the active worksheet 
 * @description Returns the first table if the active worksheet contains a table. 
@@ -40,14 +243,6 @@ function addWorksheet(worksheetName: string) {
 
 function getActiveWorksheetDataRange() {
   return getWorksheetDataRange(workbook.getActiveWorksheet().getName());
-}/**
-* @summary Retrieves values of the first column in the given range
-* @argument {ExcelScript.Range} range Range
-* @returns {array} Returns an array
-*/
-
-function getFirstColumnValuesInRange(range: ExcelScript.Range) {
-  return range.getColumn(0).getTexts().map(columnValue => columnValue[0]);
 }
 
 /**
@@ -61,7 +256,7 @@ function getFirstColumnValuesInRange(range: ExcelScript.Range) {
 * @returns {number} Returns an integer
 */
   
-function getLastColumnIndexInWorksheet(worksheet: ExcelScript.Worksheet, threshold: number) {
+function getLastColumnIndexInWorksheet(worksheet: ExcelScript.Worksheet, threshold: number): number {
   let column = worksheet.getCell(0, 0).getEntireColumn();
   let lastColumnWithValues: ExcelScript.Range;
   while (threshold > 0) {
@@ -111,36 +306,6 @@ function getLastRowIndexInWorksheet(worksheet: ExcelScript.Worksheet, threshold:
 }
 
 /**
-* @summary Creates an object using the specified keys and values
-* @details Values must be either strings, numbers, or boolean values.
-* Office Scripts does not support JavaScript `Object.fromEntries` function.
-* @argument {array} keys Keys
-* @argument {array} values Values
-* @returns {object} Returns an objects
-*/
-
-function getObjectFromKeysAndValues(keys: string[], values: (string|number|boolean)[]) {
-  let object = new Object();
-    for (const index in keys) {
-      if (keys[index].trim().length) {
-        object[keys[index].trim()] = values[index];
-      }
-    }
-  return object;
-}/**
-* @requires getObjectFromKeysAndValues
-* @summary Converts the given Excel range to an array of objects
-* @details The values of the first row are used as the the object keys.
-* Office Scripts does not support JavaScript `Object.fromEntries` function.
-* @argument {ExcelScript.Range} range Excel range
-* @returns {array} Returns an array of objects
-*/
-
-function getRangeAsArrayOfObjects(range: ExcelScript.Range) {
-  return range.getOffsetRange(1, 0).getValues().map(values =>
-    getObjectFromKeysAndValues(range.getRow(0).getTexts()[0], values)
-  );
-}/**
 * @requires removeEmptyRowsFromRange
 * @summary Retrieves a new range starting from the given cell address 
 * @description Throws an error if the range does not contain a cell with the given address.
@@ -173,6 +338,7 @@ function getRangeOffsetByCellAddress(range: ExcelScript.Range, cellAddress: stri
     );
   }
 }
+
 /**
 * @requires removeEmptyRowsFromRange
 * @summary Retrieves a new range starting from the cell with given value 
@@ -226,16 +392,6 @@ function getTableColumnValuesByColumnName(table: ExcelScript.Table, columnName: 
 }
 
 /**
-* @summary Retrieves unique array values
-* @argument {array} array Array
-* @returns {array} Returns an array
-*/
-
-function getUniqueArrayValues(array: []) {
-  return array.filter((
-    value, index, array
-  ) => array.indexOf(value) === index);
-}/**
 * @requires getLastColumnIndexInWorksheet
 * @requires getLastRowIndexInWorksheet
 * @requires getWorksheetRange
@@ -281,7 +437,9 @@ function getWorksheetDataRange(worksheetName: string) {
     }
   }
   return firstTable.getRange();
-}/**
+}
+
+/**
 * @summary Retrieves a new range within the given worksheet 
 * @description The new range starts from the first cell and spans the given number of rows and columns.
 * @argument {ExcelScript.Worksheet} worksheet Worksheet
@@ -318,3 +476,51 @@ function removeEmptyRowsFromRange(range: ExcelScript.Range) {
   }
   return range;
 }
+
+/**
+* @summary Sets range border with the given weight and color
+* @details Border weight must be `hairline`, `medium`, `thick`, or `thin`.
+* @argument {string} [borderColor='#000000'] Border color in hexadecimal value (default color is black) 
+* @argument {string} [borderWeight='medium'] Border weight (default weight is medium)
+* @returns {void} Returns undefined
+*/
+
+function setRangeBorder(
+  range: ExcelScript.Range, 
+  borderColor: string = '#000000', 
+  borderWeight: keyof typeof ExcelScript.BorderWeight = 'medium'
+) {
+  // Top border weight
+  range.getRow(0).getFormat().
+    getRangeBorder(ExcelScript.BorderIndex.edgeTop).
+    setWeight(ExcelScript.BorderWeight[borderWeight]);
+  // Bottom border weight
+  range.getRow(range.getRowCount() - 1).getFormat().
+    getRangeBorder(ExcelScript.BorderIndex.edgeBottom).
+    setWeight(ExcelScript.BorderWeight[borderWeight]);
+  // Left border weight
+  range.getColumn(0).getFormat().
+    getRangeBorder(ExcelScript.BorderIndex.edgeLeft).
+    setWeight(ExcelScript.BorderWeight[borderWeight]);
+  // Right border weight
+  range.getColumn(range.getColumnCount() - 1).getFormat().
+    getRangeBorder(ExcelScript.BorderIndex.edgeRight).
+    setWeight(ExcelScript.BorderWeight[borderWeight]);
+  // Top border color
+  range.getRow(0).getFormat().
+    getRangeBorder(ExcelScript.BorderIndex.edgeTop).
+    setColor(borderColor);
+  // Bottom border color
+  range.getRow(range.getRowCount() - 1).getFormat().
+    getRangeBorder(ExcelScript.BorderIndex.edgeBottom).
+    setColor(borderColor);
+  // Left border color
+  range.getColumn(0).getFormat().
+    getRangeBorder(ExcelScript.BorderIndex.edgeLeft).
+    setColor(borderColor);
+  // Right border color
+  range.getColumn(range.getColumnCount() - 1).getFormat().
+    getRangeBorder(ExcelScript.BorderIndex.edgeRight).
+    setColor(borderColor);
+}
+
