@@ -70,7 +70,7 @@ class ExcelRange {
   * @summary Parses an `ExcelScript.Range` range to an array consisting of `ExcelRow` objects
   */
 
-  parseExcelRange(range: ExcelScript.Range): ExcelRow {
+  parseExcelRange(range: ExcelScript.Range): ExcelRow[] {
     const keys = range.getRow(0).getTexts()[0];
     range = range.getOffsetRange(1, 0);
     return Array.from(Array(range.getRowCount())).map((_, rowNumber) => 
