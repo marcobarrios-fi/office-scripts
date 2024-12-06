@@ -20,7 +20,7 @@ function getWorksheetDataRange(worksheetName: string) {
       return worksheet.getUsedRange();
     // If there is an error retrieving the used range
     } catch (error) {
-      console.log('Could retrieve the used range.');
+      console.log(`Could retrieve the used range.`);
       // Retrieve used range manually by iterating through worksheet rows and columns
       return getUsedRangeInCompatibilityMode(worksheet, 10);
     }
