@@ -10,4 +10,3 @@
 function getWorksheetRange(worksheet: ExcelScript.Worksheet, rowCount: number, columnCount: number) {
   return worksheet.getRangeByIndexes(0, 0, rowCount, columnCount);
 }
-
