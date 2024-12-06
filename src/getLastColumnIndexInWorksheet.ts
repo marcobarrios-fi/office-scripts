@@ -9,7 +9,7 @@
 * @returns {number} Returns an integer
 */
   
-function getLastColumnIndexInWorksheet(worksheet: ExcelScript.Worksheet, threshold: number) {
+function getLastColumnIndexInWorksheet(worksheet: ExcelScript.Worksheet, threshold: number): number {
   let column = worksheet.getCell(0, 0).getEntireColumn();
   let lastColumnWithValues: ExcelScript.Range;
   while (threshold > 0) {
@@ -22,4 +22,3 @@ function getLastColumnIndexInWorksheet(worksheet: ExcelScript.Worksheet, thresho
   }
   return lastColumnWithValues.getColumnIndex();
 }
-
