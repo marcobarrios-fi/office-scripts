@@ -79,8 +79,8 @@ class ExcelRange {
         return null;
       case ExcelScript.RangeValueType.string:
         const cellHyperlink = cell.getHyperlink();
-        if (cell.getHyperlink()) {
-          return new ExcelURL(cellHyperlink.address, cellHyperlink.textToDisplay);
+        if (cellHyperlink) {
+          return new ExcelURL(cellHyperlink);
         } else {
           const cellValue = cell.getText();
           if (cellValue.trim().length) {
@@ -110,7 +110,7 @@ class ExcelRange {
   * @summary Parses an `ExcelScript.Range` range to an array consisting of `ExcelRow` objects
   */
 
-  parseExcelRange(range: ExcelScript.Range): ExcelRow {
+  parseExcelRange(range: ExcelScript.Range): ExcelRow[] {
     const keys = range.getRow(0).getTexts()[0];
     range = range.getOffsetRange(1, 0);
     return Array.from(Array(range.getRowCount())).map((_, rowNumber) => 
@@ -127,7 +127,7 @@ class ExcelRange {
 class ExcelRow {
 
   /**
-  * @summary Constructs a new row using the specified keys and values
+  * @summary Constructs a new `ExcelRow` object using the specified keys and values
   * @details Values must match the `ExcelRowValue` type definition
   * Office Scripts does not support JavaScript `Object.fromEntries` function.
   */
@@ -155,11 +155,14 @@ type ExcelRowValue = boolean | null | number | string | ExcelDate | ExcelURL;
 
 class ExcelURL extends URL {
 
+  /**
+  * @summary URL title
+  */
+
   title: string;
 
   /**
-  * @summary Constructs a JavaScript URL object from an Excel hyperlink
-  * @argument {ExcelScript.RangeHyperlink} hyperlink Excel hyperlink
+  * @summary Constructs a custom JavaScript URL object from an Excel hyperlink
   */
 
   constructor(hyperlink: ExcelScript.RangeHyperlink) {
