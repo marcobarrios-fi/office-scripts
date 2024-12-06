@@ -100,9 +100,7 @@ class ExcelRange {
   */
 
   parseExcelRow(row: ExcelScript.Range): ExcelRowValue[] {
-    return Array.from(Array(row.getColumnCount())).map((_, columnNumber) => 
-      this.parseExcelCell(row.getColumn(columnNumber))
-    );
+    return Array.from(Array(row.getColumnCount())).map((_, columnNumber) => this.parseExcelCell(row.getColumn(columnNumber)));
   }
 
   /**
@@ -113,9 +111,7 @@ class ExcelRange {
   parseExcelRange(range: ExcelScript.Range): ExcelRow[] {
     const keys = range.getRow(0).getTexts()[0];
     range = range.getOffsetRange(1, 0);
-    return Array.from(Array(range.getRowCount())).map((_, rowNumber) => 
-      new ExcelRow(keys, this.parseExcelRow(range.getRow(rowNumber)))
-    ).filter(row => Object.values(row).every(value => value === null) === false)
+    return Array.from(Array(range.getRowCount())).map((_, rowNumber) => new ExcelRow(keys, this.parseExcelRow(range.getRow(rowNumber)))).filter(row => !Object.values(row).every(value => value === null));
   }
   
 }
@@ -489,21 +485,27 @@ function removeEmptyRowsFromRange(range: ExcelScript.Range) {
 */
 
 function setRangeBorder(range: ExcelScript.Range, borderColor: string = '#000000', borderWeight: keyof typeof ExcelScript.BorderWeight = 'medium') {
-  // Top border weight
-  range.getRow(0).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeTop).setWeight(ExcelScript.BorderWeight[borderWeight]);
-  // Bottom border weight
-  range.getRow(range.getRowCount() - 1).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeBottom).setWeight(ExcelScript.BorderWeight[borderWeight]);
-  // Left border weight
-  range.getColumn(0).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeLeft).setWeight(ExcelScript.BorderWeight[borderWeight]);
-  // Right border weight
-  range.getColumn(range.getColumnCount() - 1).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeRight).setWeight(ExcelScript.BorderWeight[borderWeight]);
-  // Top border color
-  range.getRow(0).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeTop).setColor(borderColor);
-  // Bottom border color
-  range.getRow(range.getRowCount() - 1).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeBottom).setColor(borderColor);
-  // Left border color
-  range.getColumn(0).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeLeft).setColor(borderColor);
-  // Right border color
-  range.getColumn(range.getColumnCount() - 1).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeRight).setColor(borderColor);
+
+  const topBorder = range.getRow(0).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeTop);
+  const bottomBorder = range.getRow(range.getRowCount() - 1).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeBottom);
+  const leftBorder = range.getColumn(0).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeLeft);
+  const rightBorder = range.getColumn(range.getColumnCount() - 1).getFormat().getRangeBorder(ExcelScript.BorderIndex.edgeRight);
+
+  // Top border color and weight
+  topBorder.setColor(borderColor);
+  topBorder.setWeight(ExcelScript.BorderWeight[borderWeight]);
+  
+  // Bottom border color and weight
+  bottomBorder.setColor(borderColor);
+  bottomBorder.setWeight(ExcelScript.BorderWeight[borderWeight]);
+
+  // Left border color and weight
+  leftBorder.setColor(borderColor);
+  leftBorder.setWeight(ExcelScript.BorderWeight[borderWeight]);
+
+  // Right border color and weight
+  rightBorder.setColor(borderColor);
+  rightBorder.setWeight(ExcelScript.BorderWeight[borderWeight]);
+  
 }
 
