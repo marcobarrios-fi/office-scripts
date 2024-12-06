@@ -1,5 +1,5 @@
 /**
-* @summary Sets range border with the given weight and color
+* @summary Sets range border with the given color and weight
 * @details Border weight must be `hairline`, `medium`, `thick`, or `thin`.
 * @argument {string} [borderColor='#000000'] Border color in hexadecimal value (default color is black) 
 * @argument {string} [borderWeight='medium'] Border weight (default weight is medium)
