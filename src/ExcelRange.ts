@@ -40,7 +40,7 @@ class ExcelRange {
       case ExcelScript.RangeValueType.string:
         const cellHyperlink = cell.getHyperlink();
         if (cellHyperlink) {
-          return new ExcelURL(cellHyperlink.address, cellHyperlink.textToDisplay);
+          return new ExcelURL(cellHyperlink);
         } else {
           const cellValue = cell.getText();
           if (cellValue.trim().length) {
