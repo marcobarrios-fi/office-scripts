@@ -1,4 +1,4 @@
-/* Helper Functions (Build 2024-12-06) */
+/* Helper Functions (Build 2024-12-08) */
 
 /**
 * @summary ExcelDate class
@@ -22,7 +22,7 @@ class ExcelDate extends Date {
   */
   
   toString(): string {
-    return this.toISOString();
+    return super.toISOString();
   }
 
   /**
@@ -31,118 +31,12 @@ class ExcelDate extends Date {
   */
   
   toUSLongFormatString(): string {
-    return this.toLocaleDateString('en-US', {
+    return super.toLocaleDateString('en-US', {
       month: 'long', day: 'numeric', year: 'numeric',
     });
   }
 
 }
-
-/**
-* @summary ExcelRange class
-*/
-
-class ExcelRange {
-
-  rows: ExcelRow[];
-
-  /**
-  * @summary Constructs a new `ExcelRange` object
-  */
-
-  constructor(range: ExcelScript.Range) {
-    this.rows = this.parseExcelRange(range);
-    return this;
-  }
-
-  /**
-  * @requires ExcelDate
-  * @requires ExcelURL
-  * @summary Parses an `ExcelScript.Range` cell to an `ExcelRowValue` value
-  */
-
-  parseExcelCell(cell: ExcelScript.Range): ExcelRowValue {
-    switch (cell.getValueType()) {
-      case ExcelScript.RangeValueType.boolean:
-        if (cell.getText() === 'TRUE') {
-          return true;
-        } else {
-          return false;
-        }
-      case ExcelScript.RangeValueType.double:
-        if (cell.getNumberFormatCategory() === ExcelScript.NumberFormatCategory.date) {
-          return new ExcelDate(cell.getValue() as number);
-        } else {
-          return cell.getValue();
-        }
-      case ExcelScript.RangeValueType.empty:
-        return null;
-      case ExcelScript.RangeValueType.string:
-        const cellHyperlink = cell.getHyperlink();
-        if (cellHyperlink) {
-          return new ExcelURL(cellHyperlink);
-        } else {
-          const cellValue = cell.getText();
-          if (cellValue.trim().length) {
-            return cellValue.trim();
-          } else {
-            return null;
-          }
-        }
-      default: 
-        console.log(`Unsupported data type in cell ${cell.getAddress()}`);
-        return cell.getText();
-    }
-  }
-
-  /**
-  * @summary Parses an `ExcelScript.Range` row to an array consisting of `ExcelRowValue` values
-  */
-
-  parseExcelRow(row: ExcelScript.Range): ExcelRowValue[] {
-    return Array.from(Array(row.getColumnCount())).map((_, columnNumber) => this.parseExcelCell(row.getColumn(columnNumber)));
-  }
-
-  /**
-  * @requires ExcelRow
-  * @summary Parses an `ExcelScript.Range` range to an array consisting of `ExcelRow` objects
-  */
-
-  parseExcelRange(range: ExcelScript.Range): ExcelRow[] {
-    const keys = range.getRow(0).getTexts()[0];
-    range = range.getOffsetRange(1, 0);
-    return Array.from(Array(range.getRowCount())).map((_, rowNumber) => new ExcelRow(keys, this.parseExcelRow(range.getRow(rowNumber)))).filter(row => !Object.values(row).every(value => value === null));
-  }
-  
-}
-
-/**
-* @summary ExcelRow class
-*/
-
-class ExcelRow {
-
-  /**
-  * @summary Constructs a new `ExcelRow` object using the specified keys and values
-  * @details Values must match the `ExcelRowValue` type definition
-  * Office Scripts does not support JavaScript `Object.fromEntries` function.
-  */
-
-  constructor(keys: string[], values: ExcelRowValue[]) {
-    for (const index in keys) {
-      if (keys[index].trim().length) {
-        this[keys[index].trim()] = values[index]
-      }
-    }
-  }
-  
-}
-
-/**
-* ExcelRowValue type definition
-*/
-
-type ExcelRowValue = boolean | null | number | string | ExcelDate | ExcelURL;
 
 /**
 * @summary ExcelURL class
@@ -179,6 +73,12 @@ class ExcelURL extends URL {
   }
 
 }
+
+/**
+* ExcelValue type definition
+*/
+
+type ExcelValue = boolean | null | number | string | ExcelDate | ExcelURL;
 
 /**
 * @summary Adds a range to the given worksheet as a table 
@@ -245,6 +145,54 @@ function getActiveWorksheetDataRange() {
 }
 
 /**
+* @summary Retrieves column values in a data range
+* @description Throws an error if a column with a given name does not exist.
+*/
+
+function getDataRangeColumn(dataRange: ExcelValue[][], columnName: string) {
+  if (!dataRange[0].includes(columnName)) {
+    throw new Error(`Column ${columnName} does not exist`);
+  }
+  return dataRange.slice(1).map(row => row[dataRange[0].indexOf(columnName)]);
+}
+
+/**
+* @requires getDataRangeColumn
+* @summary Retrieves unique column values in a data range
+* @description Throws an error if a column with a given name does not exist.
+*/
+
+function getDataRangeColumnUniqueValues(dataRange: ExcelValue[][], columnName: string) {
+  return getDataRangeColumn(dataRange, columnName).filter((value, index, array) => array.indexOf(value) === index);
+}
+
+/**
+* @summary Retrieves all columns in a data range
+* @description The range is returned as a JavaScript Map object
+*/
+
+function getDataRangeColumns(dataRange: ExcelValue[][]) {
+  return new Map(dataRange[0].map((columnName, columnNumber) => 
+    [columnName as string, dataRange.slice(1).map(row => 
+      row[columnNumber])
+    ])
+  );
+}
+
+/**
+* @summary Retrieves all rows in a data range
+* @description The range is returned as an array consisting of JavaScript Map objects
+*/
+
+function getDataRangeRows(dataRange: ExcelValue[][]) {
+  return dataRange.slice(1).map(row => 
+    new Map(dataRange[0].map((columnName, columnNumber) => 
+      [columnName, row[columnNumber]]
+    ))
+  );
+}
+
+/**
 * @requires getNonEmptyCellCountInRange
 * @summary Retrieves the index number of the last column in the given worksheet
 * @description A column is considered to be the last column if it is followed by the number of empty columns specified by the threshold argument.
@@ -306,49 +254,11 @@ function getLastRowIndexInWorksheet(worksheet: ExcelScript.Worksheet, threshold:
 
 /**
 * @requires removeEmptyRowsFromRange
-* @summary Retrieves a new range starting from the given cell address 
-* @description Throws an error if the range does not contain a cell with the given address.
-* @argument {ExcelScript.Range} range Range
-* @argument {string} cellAddress Cell address
-* @argument {boolean} [removeEmptyRows=false] A boolean value indicating whether empty rows should be removed
-* @returns {ExcelScript.Range} Returns an ExcelScript range
-*/
-
-function getRangeOffsetByCellAddress(range: ExcelScript.Range, cellAddress: string, removeEmptyRows: boolean = false) {
-  const cell = range.getBoundingRect(cellAddress);
-  if (typeof cell === 'undefined') {
-    throw new Error(`Could not retrieve the cell with address ${cellAddress}.`);
-  }
-  if (removeEmptyRows) {
-    return removeEmptyRowsFromRange(range.getOffsetRange(
-      cell.getRowIndex(),
-      cell.getColumnIndex()
-    ).getResizedRange(
-      cell.getRowIndex(),
-      -cell.getColumnIndex()
-    ));
-  } else {
-    return range.getOffsetRange(
-      cell.getRowIndex(),
-      cell.getColumnIndex()
-    ).getResizedRange(
-      cell.getRowIndex(),
-      -cell.getColumnIndex()
-    );
-  }
-}
-
-/**
-* @requires removeEmptyRowsFromRange
 * @summary Retrieves a new range starting from the cell with given value 
 * @description Throws an error if the range does not contain a cell with the given value.
-* @argument {ExcelScript.Range} range Range
-* @argument {string} cellValue Cell value
-* @argument {boolean} [removeEmptyRows=false] A boolean value indicating whether empty rows should be removed
-* @returns {ExcelScript.Range} Returns an ExcelScript range
 */
 
-function getRangeOffsetByCellValue(range: ExcelScript.Range, cellValue: string, removeEmptyRows: boolean = false) {
+function getRangeOffsetByCellValue(range: ExcelScript.Range, cellValue: string, removeEmptyRows: boolean = false): ExcelScript.Range {
   const cell = range.find(cellValue, {
     completeMatch: true,
     matchCase: true
@@ -452,6 +362,57 @@ function getWorksheetRange(worksheet: ExcelScript.Worksheet, rowCount: number, c
 }
 
 /**
+* @summary Parses the given `ExcelScript.Range` range to an array of arrays.
+* @description Empty cells are converted to `null` values, dates are converted to `ExcelDate` objects, and hyperlinks are optionally converted to `ExcelURL` objects.
+* Please note that reading data from the Excel using the Office Scripts API is extremely slow. 
+* Retrieving value types and number formats by row would make the script run significantly slower.
+* The Office Scripts API does not provide any method for retrieving or identifying all hyperlinks so they must be retrieved one cell at the time. 
+* Note: Enabling parsing hyperlinks causes the script to run over hundred times slower.
+*/
+
+function parseRange(range: ExcelScript.Range, 
+  excludeEmptyRows: boolean = true, parseHyperlinks: boolean = false): ExcelValue[][] {
+  const rangeProperties = {
+   valueTypes: range.getValueTypes(),
+   numberFormats: range.getNumberFormatCategories()
+  }
+  return range.getValues().map((row, rowNumber) => {
+   if (excludeEmptyRows) {
+    if (rangeProperties.valueTypes[rowNumber].every(
+      valueType => valueType === ExcelScript.RangeValueType.empty
+    )) {
+     return null;
+    }
+   }
+   return row.map((column, columnNumber) => {
+    switch (rangeProperties.valueTypes[rowNumber][columnNumber]) {
+     case ExcelScript.RangeValueType.empty:
+      return null;
+     case ExcelScript.RangeValueType.string:
+      if (parseHyperlinks) {
+       const hyperlink = range.getCell(rowNumber, columnNumber).getHyperlink();
+       if (hyperlink) {
+        return new ExcelURL(hyperlink);
+       }
+      }
+      if ((column as string).trim().length) {
+       return (column as string).trim();
+      } else {
+       return null;
+      }
+     case ExcelScript.RangeValueType.double:
+      switch (rangeProperties.numberFormats[rowNumber][columnNumber as number]) {
+       case ExcelScript.NumberFormatCategory.date:
+        return new ExcelDate(column as number);
+      }
+      return column;
+    }
+    return column;
+   })
+  }).filter(row => Boolean(row));
+}
+
+/**
 * @requires getNonEmptyCellCountInRange
 * @summary Removes empty rows from the given range
 * @argument {ExcelScript.Range} range Range
@@ -477,7 +438,17 @@ function removeEmptyRowsFromRange(range: ExcelScript.Range) {
 }
 
 /**
-* @summary Sets range border with the given weight and color
+* @summary Sets the given values in a column
+*/
+
+function setColumnValues(worksheet: ExcelScript.Worksheet, firstRow: number, firstColumn: number, values: (string | number | boolean)[]): ExcelScript.Range {
+  const range = worksheet.getRangeByIndexes(firstRow, firstColumn, values.length, 1);
+  range.setValues(values.map(value => Array(value)));
+  return range;
+}
+
+/**
+* @summary Sets range border with the given color and weight
 * @details Border weight must be `hairline`, `medium`, `thick`, or `thin`.
 * @argument {string} [borderColor='#000000'] Border color in hexadecimal value (default color is black) 
 * @argument {string} [borderWeight='medium'] Border weight (default weight is medium)
@@ -501,5 +472,15 @@ function setRangeBorder(range: ExcelScript.Range, borderColor: string = '#000000
   // Right border color and weight
   rightBorder.setColor(borderColor);
   rightBorder.setWeight(ExcelScript.BorderWeight[borderWeight]);
+}
+
+/**
+* @summary Sets the given values in a row
+*/
+
+function setRowValues(worksheet: ExcelScript.Worksheet, firstRow: number, firstColumn: number, values: (string | number | boolean)[]): ExcelScript.Range {
+  const range = worksheet.getRangeByIndexes(firstRow, firstColumn, 1, values.length);
+  range.setValues(Array(values));
+  return range;
 }
 
