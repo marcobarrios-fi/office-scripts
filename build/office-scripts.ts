@@ -1,4 +1,4 @@
-/* Helper Functions (Build 2024-12-09) */
+/* Helper Functions (Build 2024-12-11) */
 
 /**
 * @summary ExcelDate class
@@ -421,38 +421,38 @@ function parseRange(range: ExcelScript.Range,
    numberFormats: range.getNumberFormatCategories()
   }
   return range.getValues().map((row, rowNumber) => {
-   if (excludeEmptyRows) {
-    if (rangeProperties.valueTypes[rowNumber].every(
-      valueType => valueType === ExcelScript.RangeValueType.empty
-    )) {
-     return null;
-    }
-   }
-   return row.map((column, columnNumber) => {
-    switch (rangeProperties.valueTypes[rowNumber][columnNumber]) {
-     case ExcelScript.RangeValueType.empty:
+    if (excludeEmptyRows) {
+      if (rangeProperties.valueTypes[rowNumber].every(
+        valueType => valueType === ExcelScript.RangeValueType.empty
+      )) {
       return null;
-     case ExcelScript.RangeValueType.string:
-      if (parseHyperlinks) {
-       const hyperlink = range.getCell(rowNumber, columnNumber).getHyperlink();
-       if (hyperlink) {
-        return new ExcelURL(hyperlink);
-       }
       }
-      if ((column as string).trim().length) {
-       return (column as string).trim();
-      } else {
-       return null;
-      }
-     case ExcelScript.RangeValueType.double:
-      switch (rangeProperties.numberFormats[rowNumber][columnNumber as number]) {
-       case ExcelScript.NumberFormatCategory.date:
-        return new ExcelDate(column as number);
+    }
+    return row.map((column, columnNumber) => {
+      switch (rangeProperties.valueTypes[rowNumber][columnNumber]) {
+        case ExcelScript.RangeValueType.empty:
+          return null;
+        case ExcelScript.RangeValueType.string:
+          if (parseHyperlinks) {
+            const hyperlink = range.getCell(rowNumber, columnNumber).getHyperlink();
+            if (hyperlink) {
+              return new ExcelURL(hyperlink);
+            }
+          }
+          if ((column as string).trim().length) {
+            return (column as string).trim();
+          } else {
+            return null;
+          }
+        case ExcelScript.RangeValueType.double:
+          switch (rangeProperties.numberFormats[rowNumber][columnNumber as number]) {
+            case ExcelScript.NumberFormatCategory.date:
+              return new ExcelDate(column as number);
+          }
+        return column;
       }
       return column;
-    }
-    return column;
-   })
+    })
   }).filter(row => Boolean(row));
 }
 
